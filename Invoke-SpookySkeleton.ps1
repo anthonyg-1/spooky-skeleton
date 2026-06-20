@@ -50,7 +50,7 @@ function Invoke-SpookySkeleton {
         [scriptblock] $ScriptBlock,
 
         [ValidateRange(50, 2000)]
-        [int] $FrameDelayMilliseconds = 125,
+        [int] $FrameDelayMilliseconds = 92,
 
         [switch] $NoClear,
 
