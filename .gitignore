@@ -1,0 +1,27 @@
+# Local prompt/context files
+SYSTEM_PROMPT.md
+
+# Environment and secret files
+.env
+.env.*
+*.secret
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Editor/project metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and transient output
+*.log
+*.tmp
+*.temp
+
+# PowerShell generated artifacts
+*.ps1xml
+*.psd1.tmp
+*.psm1.tmp
