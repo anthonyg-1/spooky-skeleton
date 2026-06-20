@@ -7,7 +7,8 @@ Runs a terminal animation using embedded spooky skeleton art and rotating status
 The function can run for a fixed number of seconds, or animate while a caller-provided
 script block runs in a background job. The skeleton flashes through a small set of
 terminal colors while it dances. Messages rotate independently and stay on screen
-for at least two seconds.
+for at least two seconds. By default, it plays a short three-note spooky song before
+the animation starts.
 
 .PARAMETER Seconds
 Specifies how many seconds the animation should run in demo mode. The default is 10.
@@ -20,6 +21,9 @@ Specifies the delay between animation frames.
 
 .PARAMETER NoClear
 Writes each frame without clearing the host first.
+
+.PARAMETER NoMusic
+Runs the animation without playing the spooky song.
 
 .PARAMETER PassThru
 Returns output produced by ScriptBlock after the animation finishes.
@@ -54,6 +58,8 @@ function Invoke-SpookySkeleton {
 
         [switch] $NoClear,
 
+        [switch] $NoMusic,
+
         [Parameter(ParameterSetName = 'ScriptBlock')]
         [switch] $PassThru
     )
@@ -78,9 +84,207 @@ function Invoke-SpookySkeleton {
             $CanManageColor = $false
         }
 
+        function Invoke-SpookySong {
+            [CmdletBinding()]
+            param()
+
+            begin {
+                $Notes = @(
+                    [pscustomobject] @{
+                        Frequency = 392
+                        DurationMilliseconds = 300
+                    }
+                    [pscustomobject] @{
+                        Frequency = 277
+                        DurationMilliseconds = 450
+                    }
+                    [pscustomobject] @{
+                        Frequency = 185
+                        DurationMilliseconds = 700
+                    }
+                )
+
+                function Out-SpookySongWaveFile {
+                    [CmdletBinding()]
+                    param(
+                        [Parameter(Mandatory)]
+                        [pscustomobject[]] $WaveNotes,
+
+                        [Parameter(Mandatory)]
+                        [string] $Path
+                    )
+
+                    $SampleRate = 44100
+                    $Amplitude = 16000
+                    $BytesPerSample = 2
+                    $SampleCount = 0
+
+                    foreach ($Note in $WaveNotes) {
+                        $SampleCount += [int] [Math]::Ceiling($SampleRate * ($Note.DurationMilliseconds / 1000))
+                    }
+
+                    $DataSize = $SampleCount * $BytesPerSample
+                    $FileSizeMinusRiffHeader = 36 + $DataSize
+                    $ByteRate = $SampleRate * $BytesPerSample
+
+                    $FileStream = [System.IO.File]::Create($Path)
+                    $Writer = [System.IO.BinaryWriter]::new($FileStream)
+
+                    try {
+                        $Writer.Write([Text.Encoding]::ASCII.GetBytes('RIFF'))
+                        $Writer.Write([int] $FileSizeMinusRiffHeader)
+                        $Writer.Write([Text.Encoding]::ASCII.GetBytes('WAVE'))
+                        $Writer.Write([Text.Encoding]::ASCII.GetBytes('fmt '))
+                        $Writer.Write([int] 16)
+                        $Writer.Write([short] 1)
+                        $Writer.Write([short] 1)
+                        $Writer.Write([int] $SampleRate)
+                        $Writer.Write([int] $ByteRate)
+                        $Writer.Write([short] $BytesPerSample)
+                        $Writer.Write([short] 16)
+                        $Writer.Write([Text.Encoding]::ASCII.GetBytes('data'))
+                        $Writer.Write([int] $DataSize)
+
+                        foreach ($Note in $WaveNotes) {
+                            $NoteSampleCount = [int] [Math]::Ceiling($SampleRate * ($Note.DurationMilliseconds / 1000))
+
+                            for ($SampleIndex = 0; $SampleIndex -lt $NoteSampleCount; $SampleIndex++) {
+                                $ElapsedSeconds = $SampleIndex / $SampleRate
+                                $Envelope = [Math]::Min(1, $SampleIndex / 400)
+                                $SamplesRemaining = $NoteSampleCount - $SampleIndex
+
+                                if ($SamplesRemaining -lt 1200) {
+                                    $Envelope *= $SamplesRemaining / 1200
+                                }
+
+                                $Value = [Math]::Sin(2 * [Math]::PI * $Note.Frequency * $ElapsedSeconds)
+                                $Writer.Write([short] ($Value * $Amplitude * $Envelope))
+                            }
+                        }
+                    }
+                    finally {
+                        $Writer.Dispose()
+                        $FileStream.Dispose()
+                    }
+                }
+
+                function Invoke-SpookyWavePlayer {
+                    [CmdletBinding()]
+                    [OutputType([bool])]
+                    param(
+                        [Parameter(Mandatory)]
+                        [pscustomobject[]] $WaveNotes,
+
+                        [Parameter(Mandatory)]
+                        [string[]] $PlayerNames
+                    )
+
+                    $FoundPlayer = $false
+                    foreach ($PlayerName in $PlayerNames) {
+                        $Player = Get-Command -Name $PlayerName -ErrorAction SilentlyContinue
+
+                        if ($null -eq $Player) {
+                            continue
+                        }
+
+                        $FoundPlayer = $true
+                        $WavePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "spooky-song-$([guid]::NewGuid()).wav"
+
+                        try {
+                            Out-SpookySongWaveFile -WaveNotes $WaveNotes -Path $WavePath
+                            $Process = Start-Process -FilePath $Player.Source -ArgumentList @($WavePath) -Wait -PassThru
+
+                            if ($Process.ExitCode -eq 0) {
+                                return $true
+                            }
+                        }
+                        finally {
+                            if (Test-Path -LiteralPath $WavePath) {
+                                Remove-Item -LiteralPath $WavePath -Force
+                            }
+                        }
+                    }
+
+                    if ($FoundPlayer) {
+                        throw 'A supported audio player was found, but it could not play the generated spooky song.'
+                    }
+
+                    return $false
+                }
+
+                function Invoke-SpookyTerminalBell {
+                    [CmdletBinding()]
+                    param(
+                        [Parameter(Mandatory)]
+                        [pscustomobject[]] $BellNotes
+                    )
+
+                    foreach ($Note in $BellNotes) {
+                        [Console]::Out.Write([char] 7)
+                        [Console]::Out.Flush()
+                        Start-Sleep -Milliseconds $Note.DurationMilliseconds
+                    }
+                }
+            }
+
+            process {
+                if ($IsLinux) {
+                    if (Invoke-SpookyWavePlayer -WaveNotes $Notes -PlayerNames @('paplay', 'aplay', 'ffplay')) {
+                        return
+                    }
+
+                    Write-Verbose 'No supported Linux audio player was found. No sound was played.'
+                    return
+                }
+
+                if ($IsMacOS) {
+                    if (Invoke-SpookyWavePlayer -WaveNotes $Notes -PlayerNames @('afplay')) {
+                        return
+                    }
+
+                    Write-Verbose 'afplay was not found. Using terminal bell fallback.'
+                    Invoke-SpookyTerminalBell -BellNotes $Notes
+                    return
+                }
+
+                try {
+                    foreach ($Note in $Notes) {
+                        [Console]::Beep($Note.Frequency, $Note.DurationMilliseconds)
+                    }
+                }
+                catch [System.PlatformNotSupportedException] {
+                    Write-Verbose 'Console.Beep is not supported here. Using terminal bell fallback.'
+                    Invoke-SpookyTerminalBell -BellNotes $Notes
+                }
+            }
+        }
+
+        function Invoke-SpookySongAsync {
+            [CmdletBinding()]
+            [OutputType([System.Management.Automation.Job])]
+            param()
+
+            $ThreadJobCommand = Get-Command -Name Start-ThreadJob -ErrorAction SilentlyContinue
+
+            if ($null -eq $ThreadJobCommand) {
+                Invoke-SpookySong
+                return $null
+            }
+
+            $SongFunctionText = ${function:Invoke-SpookySong}.ToString()
+
+            Start-ThreadJob -ScriptBlock {
+                $FunctionDefinition = "function Invoke-SpookySong { $using:SongFunctionText }"
+                . ([scriptblock]::Create($FunctionDefinition))
+                Invoke-SpookySong
+            }
+        }
+
         $ScriptJob = $null
+        $SongJob = $null
         $FrameIndex = 0
         $MessageIndex = 0
+        $HasPlayedMusic = $false
         $MessageDisplayMilliseconds = 2000
         $NextMessageAt = [DateTimeOffset]::Now.AddMilliseconds($MessageDisplayMilliseconds)
 
@@ -239,6 +443,11 @@ function Invoke-SpookySkeleton {
 
                     Write-SpookySkeletonFrame -ArtLines $SkeletonFrameLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
 
+                    if (-not $NoMusic -and -not $HasPlayedMusic) {
+                        $HasPlayedMusic = $true
+                        $SongJob = Invoke-SpookySongAsync
+                    }
+
                     $FrameIndex++
                     Start-Sleep -Milliseconds $FrameDelayMilliseconds
                 }
@@ -257,6 +466,11 @@ function Invoke-SpookySkeleton {
                     $SkeletonFrameLines = $SkeletonDanceFrames[$FrameIndex % $SkeletonDanceFrames.Count]
 
                     Write-SpookySkeletonFrame -ArtLines $SkeletonFrameLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
+
+                    if (-not $NoMusic -and -not $HasPlayedMusic) {
+                        $HasPlayedMusic = $true
+                        $SongJob = Invoke-SpookySongAsync
+                    }
 
                     $FrameIndex++
                     Start-Sleep -Milliseconds $FrameDelayMilliseconds
@@ -300,6 +514,11 @@ function Invoke-SpookySkeleton {
                 }
 
                 Remove-Job -Job $ScriptJob -Force
+            }
+
+            if ($null -ne $SongJob) {
+                Receive-Job -Job $SongJob -ErrorAction SilentlyContinue | Out-Null
+                Remove-Job -Job $SongJob -Force
             }
         }
     }
