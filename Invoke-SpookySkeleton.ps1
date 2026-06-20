@@ -168,6 +168,21 @@ function Invoke-SpookySkeleton {
             [ConsoleColor]::Green
         )
         $SkeletonLines = $SkeletonArt -split "`r?`n"
+        $WaveLeftLines = [string[]] $SkeletonLines.Clone()
+        $WaveLeftLines[8] = '░▀░▐░░░▄▄░█░▀▀░░░░░'
+        $WaveLeftLines[9] = '░▄█▌░░░▄░▀█▀░▀░░░░░'
+        $WaveLeftLines[14] = '░░░░░░▐▌░░░░░░░░█░░'
+        $WaveLeftLines[15] = '░░░░░░░█░░░░░░░░▐▌░'
+
+        $WaveRightLines = [string[]] $SkeletonLines.Clone()
+        $WaveRightLines[13] = '░░░░░░░▐▌░░░░░░▐▌░░'
+        $WaveRightLines[15] = '░░░░░░▐▌░░░░░░░░█░░'
+
+        $SkeletonDanceFrames = [System.Collections.Generic.List[string[]]]::new()
+        $SkeletonDanceFrames.Add($SkeletonLines)
+        $SkeletonDanceFrames.Add($WaveLeftLines)
+        $SkeletonDanceFrames.Add($SkeletonLines)
+        $SkeletonDanceFrames.Add($WaveRightLines)
 
         function Write-SpookySkeletonFrame {
             param(
@@ -220,8 +235,9 @@ function Invoke-SpookySkeleton {
                     $CurrentOffset = $FrameOffsets[$FrameIndex % $FrameOffsets.Count]
                     $CurrentColor = $FrameColors[$FrameIndex % $FrameColors.Count]
                     $CurrentMessage = $Messages[$MessageIndex % $Messages.Count]
+                    $SkeletonFrameLines = $SkeletonDanceFrames[$FrameIndex % $SkeletonDanceFrames.Count]
 
-                    Write-SpookySkeletonFrame -ArtLines $SkeletonLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
+                    Write-SpookySkeletonFrame -ArtLines $SkeletonFrameLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
 
                     $FrameIndex++
                     Start-Sleep -Milliseconds $FrameDelayMilliseconds
@@ -238,8 +254,9 @@ function Invoke-SpookySkeleton {
                     $CurrentOffset = $FrameOffsets[$FrameIndex % $FrameOffsets.Count]
                     $CurrentColor = $FrameColors[$FrameIndex % $FrameColors.Count]
                     $CurrentMessage = $Messages[$MessageIndex % $Messages.Count]
+                    $SkeletonFrameLines = $SkeletonDanceFrames[$FrameIndex % $SkeletonDanceFrames.Count]
 
-                    Write-SpookySkeletonFrame -ArtLines $SkeletonLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
+                    Write-SpookySkeletonFrame -ArtLines $SkeletonFrameLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
 
                     $FrameIndex++
                     Start-Sleep -Milliseconds $FrameDelayMilliseconds
