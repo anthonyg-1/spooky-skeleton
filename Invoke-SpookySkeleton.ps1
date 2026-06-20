@@ -11,7 +11,7 @@ for at least two seconds. By default, it plays a short three-note spooky song be
 the animation starts.
 
 .PARAMETER Seconds
-Specifies how many seconds the animation should run in demo mode. The default is 10.
+Specifies how many seconds the animation should run in demo mode. The default is 6.
 
 .PARAMETER ScriptBlock
 Specifies work to run while the spooky skeleton animation is displayed.
@@ -48,7 +48,7 @@ function Invoke-SpookySkeleton {
     param(
         [Parameter(ParameterSetName = 'Seconds')]
         [ValidateRange(1, 3600)]
-        [int] $Seconds = 10,
+        [int] $Seconds = 6,
 
         [Parameter(Mandatory, ParameterSetName = 'ScriptBlock')]
         [scriptblock] $ScriptBlock,
