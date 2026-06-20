@@ -1,6 +1,6 @@
 # Spooky Skeleton
 
-Spooky Skeleton is a tiny PowerShell-only terminal animation helper inspired by silly spooky skeleton meme energy.
+Spooky Skeleton is a tiny PowerShell-only terminal animation helper inspired by the very serious spooky skeleton copypasta.
 
 The main script is `Invoke-SpookySkeleton.ps1`, and the main function is `Invoke-SpookySkeleton`. It can run as a short demo spinner, or it can animate while another PowerShell script block runs. While it dances, the skeleton flashes through terminal colors for maximum haunted status energy, and each message stays on screen for at least two seconds.
 
