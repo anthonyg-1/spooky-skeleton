@@ -45,6 +45,7 @@ Invoke-SpookySkeleton -ScriptBlock {
 #>
 function Invoke-SpookySkeleton {
     [CmdletBinding(DefaultParameterSetName = 'Seconds')]
+    [Alias('spooky-skeleton', 'spookyskeleton')]
     param(
         [Parameter(ParameterSetName = 'Seconds')]
         [ValidateRange(1, 3600)]
@@ -290,10 +291,10 @@ function Invoke-SpookySkeleton {
         $NextMessageAt = [DateTimeOffset]::Now.AddMilliseconds($MessageDisplayMilliseconds)
 
         $SkeletonArt = @'
-▒▒▒░░░░░░░░░░▄▐░░░░
-▒░░░░░░▄▄▄░░▄██▄░░░
-░░░░░░▐▀█▀▌░░░░▀█▄░
-░░░░░░▐█▄█▌░░░░░░▀█▄
+░░░░░░░░░░░░░░░░░░░░
+░░░░░░░▄▄▄░░░░░░░░░░
+░░░░░░▐▀█▀▌░░░░░░░░░
+░░░░░░▐█▄█▌░░░░░░░░░
 ░░░░░░░▀▄▀░░░▄▄▄▄▄▀▀
 ░░░░░▄▄▄██▀▀▀▀░░░░░
 ░░░░█▀▄▄▄█░▀▀░░░░░░
@@ -429,8 +430,9 @@ function Invoke-SpookySkeleton {
                 $Host.UI.RawUI.ForegroundColor = $Color
             }
 
+            $FrameWidth = ($ArtLines | Measure-Object -Property Length -Maximum).Maximum
             foreach ($Line in $ArtLines) {
-                $Host.UI.WriteLine("$Padding$Line")
+                $Host.UI.WriteLine("$Padding$($Line.PadRight($FrameWidth, '░'))")
             }
 
             $Host.UI.WriteLine('')
