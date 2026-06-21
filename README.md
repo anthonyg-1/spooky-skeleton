@@ -27,6 +27,13 @@ Run demo mode with the default 10-second duration:
 Invoke-SpookySkeleton
 ```
 
+Or use either alias:
+
+```powershell
+spooky-skeleton
+spookyskeleton
+```
+
 Run demo mode for a specific duration:
 
 ```powershell
