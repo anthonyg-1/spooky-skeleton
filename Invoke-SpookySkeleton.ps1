@@ -283,7 +283,8 @@ function Invoke-SpookySkeleton {
         $ScriptJob = $null
         $SongJob = $null
         $FrameIndex = 0
-        $MessageIndex = 0
+        $MessageIndex = -1
+        $MessageSequenceIndex = 0
         $HasPlayedMusic = $false
         $MessageDisplayMilliseconds = 2000
         $NextMessageAt = [DateTimeOffset]::Now.AddMilliseconds($MessageDisplayMilliseconds)
@@ -308,7 +309,6 @@ function Invoke-SpookySkeleton {
 '@
 
         $Messages = @(
-            'U HAVE BEEN SPOOKED BY THE SPOOKY SKELETON'
             'DOOT DOOT'
             'THE BONES HAVE ENTERED THE PIPELINE'
             'RATTLE ME BONES WHILE THIS RUNS'
@@ -362,6 +362,28 @@ function Invoke-SpookySkeleton {
             'THE SKELETON IS WAITING WITH MAXIMUM DRAMA'
         )
 
+        $OpeningMessages = @(
+            'U HAVE BEEN SPOOKED BY THE SPOOKY SKILENTON'
+            'SEND THIS TO 4 PPL OR SKELINTONS WILL EAT YOU'
+        )
+        $CurrentMessage = $OpeningMessages[$MessageSequenceIndex]
+
+        function Get-SpookyRandomMessageIndex {
+            param(
+                [int] $CurrentIndex,
+                [int] $MessageCount
+            )
+
+            if ($MessageCount -le 1) {
+                return 0
+            }
+
+            do {
+                $NextIndex = Get-Random -Minimum 0 -Maximum $MessageCount
+            } while ($NextIndex -eq $CurrentIndex)
+
+            $NextIndex
+        }
         $FrameOffsets = @(0, 1, 2, 1)
         $FrameColors = @(
             [ConsoleColor]::Gray
@@ -432,13 +454,19 @@ function Invoke-SpookySkeleton {
                 while ([DateTimeOffset]::Now -lt $StopAt) {
                     $CurrentTime = [DateTimeOffset]::Now
                     if ($CurrentTime -ge $NextMessageAt) {
-                        $MessageIndex++
+                        $MessageSequenceIndex++
+                        if ($MessageSequenceIndex -lt $OpeningMessages.Count) {
+                            $CurrentMessage = $OpeningMessages[$MessageSequenceIndex]
+                        }
+                        else {
+                            $MessageIndex = Get-SpookyRandomMessageIndex -CurrentIndex $MessageIndex -MessageCount $Messages.Count
+                            $CurrentMessage = $Messages[$MessageIndex]
+                        }
                         $NextMessageAt = $CurrentTime.AddMilliseconds($MessageDisplayMilliseconds)
                     }
 
                     $CurrentOffset = $FrameOffsets[$FrameIndex % $FrameOffsets.Count]
                     $CurrentColor = $FrameColors[$FrameIndex % $FrameColors.Count]
-                    $CurrentMessage = $Messages[$MessageIndex % $Messages.Count]
                     $SkeletonFrameLines = $SkeletonDanceFrames[$FrameIndex % $SkeletonDanceFrames.Count]
 
                     Write-SpookySkeletonFrame -ArtLines $SkeletonFrameLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
@@ -456,13 +484,19 @@ function Invoke-SpookySkeleton {
                 while ($ScriptJob.State -eq 'NotStarted' -or $ScriptJob.State -eq 'Running') {
                     $CurrentTime = [DateTimeOffset]::Now
                     if ($CurrentTime -ge $NextMessageAt) {
-                        $MessageIndex++
+                        $MessageSequenceIndex++
+                        if ($MessageSequenceIndex -lt $OpeningMessages.Count) {
+                            $CurrentMessage = $OpeningMessages[$MessageSequenceIndex]
+                        }
+                        else {
+                            $MessageIndex = Get-SpookyRandomMessageIndex -CurrentIndex $MessageIndex -MessageCount $Messages.Count
+                            $CurrentMessage = $Messages[$MessageIndex]
+                        }
                         $NextMessageAt = $CurrentTime.AddMilliseconds($MessageDisplayMilliseconds)
                     }
 
                     $CurrentOffset = $FrameOffsets[$FrameIndex % $FrameOffsets.Count]
                     $CurrentColor = $FrameColors[$FrameIndex % $FrameColors.Count]
-                    $CurrentMessage = $Messages[$MessageIndex % $Messages.Count]
                     $SkeletonFrameLines = $SkeletonDanceFrames[$FrameIndex % $SkeletonDanceFrames.Count]
 
                     Write-SpookySkeletonFrame -ArtLines $SkeletonFrameLines -Message $CurrentMessage -Offset $CurrentOffset -Color $CurrentColor -UseColor $CanManageColor -NoClearFrame:$NoClear
