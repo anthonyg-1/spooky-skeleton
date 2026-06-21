@@ -12,18 +12,23 @@ the animation starts.
 
 .PARAMETER Seconds
 Specifies how many seconds the animation should run in demo mode. The default is 6.
+Aliases: s, DurationInSecods.
 
 .PARAMETER ScriptBlock
 Specifies work to run while the spooky skeleton animation is displayed.
+Aliases: sb, Command.
 
 .PARAMETER FrameDelayMilliseconds
 Specifies the delay between animation frames.
+Alias: fdm.
 
 .PARAMETER NoClear
 Writes each frame without clearing the host first.
+Alias: nc.
 
 .PARAMETER NoMusic
 Runs the animation without playing the spooky song.
+Alias: nm.
 
 .PARAMETER PassThru
 Returns output produced by ScriptBlock after the animation finishes.
@@ -42,6 +47,9 @@ Invoke-SpookySkeleton -ScriptBlock {
 Invoke-SpookySkeleton -ScriptBlock {
     Get-Date
 } -PassThru
+
+.EXAMPLE
+Invoke-SpookySkeleton -s 10 -fdm 200 -nm
 #>
 function Invoke-SpookySkeleton {
     [CmdletBinding(DefaultParameterSetName = 'Seconds')]
@@ -49,16 +57,21 @@ function Invoke-SpookySkeleton {
     param(
         [Parameter(ParameterSetName = 'Seconds')]
         [ValidateRange(1, 3600)]
+        [Alias('s', 'DurationInSecods')]
         [int] $Seconds = 6,
 
         [Parameter(Mandatory, ParameterSetName = 'ScriptBlock')]
+        [Alias('sb', 'Command')]
         [scriptblock] $ScriptBlock,
 
         [ValidateRange(50, 2000)]
+        [Alias('fdm')]
         [int] $FrameDelayMilliseconds = 92,
 
+        [Alias('nc')]
         [switch] $NoClear,
 
+        [Alias('nm')]
         [switch] $NoMusic,
 
         [Parameter(ParameterSetName = 'ScriptBlock')]
