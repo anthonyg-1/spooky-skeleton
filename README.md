@@ -21,7 +21,7 @@ Dot-source the script first:
 . ./Invoke-SpookySkeleton.ps1
 ```
 
-Run demo mode with the default 10-second duration:
+Run demo mode with the default 6-second duration:
 
 ```powershell
 Invoke-SpookySkeleton
@@ -40,11 +40,15 @@ Run demo mode for a specific duration:
 Invoke-SpookySkeleton -Seconds 10
 ```
 
+The `Seconds` parameter can also be called with `-s` or `-DurationInSecods`.
+
 Adjust the animation speed:
 
 ```powershell
 Invoke-SpookySkeleton -Seconds 10 -FrameDelayMilliseconds 200
 ```
+
+The `FrameDelayMilliseconds` parameter can also be called with `-fdm`.
 
 Run work mode while a script block executes:
 
@@ -53,6 +57,8 @@ Invoke-SpookySkeleton -ScriptBlock {
     Start-Sleep -Seconds 5
 }
 ```
+
+The `ScriptBlock` parameter can also be called with `-sb` or `-Command`.
 
 Return output from the script block:
 
@@ -67,6 +73,8 @@ Run silently without the spooky song:
 ```powershell
 Invoke-SpookySkeleton -NoMusic
 ```
+
+The `NoClear` and `NoMusic` switches can also be called with `-nc` and `-nm`.
 
 ## Audio Behavior
 
