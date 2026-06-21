@@ -8,9 +8,6 @@ The main script is `Invoke-SpookySkeleton.ps1`, and the main function is `Invoke
 
 ```text
 .
-├── assets/
-│   ├── spooky-skeleton.txt
-│   └── messages.txt
 ├── Invoke-SpookySkeleton.ps1
 ├── SYSTEM_PROMPT.md
 └── README.md
@@ -83,17 +80,6 @@ Audio support by platform:
 - Linux: generates a temporary WAV file and tries `paplay`, then `aplay`, then `ffplay`.
 
 On Linux, if none of those players are installed, no sound is played. If a supported player is present but cannot play the generated WAV, the function throws instead of falling back to terminal bell beeps.
-
-## Assets
-
-The source art and source messages live in `assets/`.
-
-- `assets/spooky-skeleton.txt` contains the base skeleton art.
-- `assets/messages.txt` contains one spinner message per line.
-
-When `Invoke-SpookySkeleton.ps1` is generated or updated, the asset contents are embedded directly into the script. At runtime, `Invoke-SpookySkeleton.ps1` is self-contained. You can copy only that file into another folder, dot-source it, and run `Invoke-SpookySkeleton`.
-
-To update the spinner messages, edit `assets/messages.txt`, then update the embedded message list in `Invoke-SpookySkeleton.ps1`.
 
 ## Script Analyzer
 
