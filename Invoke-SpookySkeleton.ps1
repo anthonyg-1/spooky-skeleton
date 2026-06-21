@@ -193,13 +193,39 @@ function Invoke-SpookySkeleton {
 
                         try {
                             Out-SpookySongWaveFile -WaveNotes $WaveNotes -Path $WavePath
-                            $Process = Start-Process -FilePath $Player.Source -ArgumentList @($WavePath) -Wait -PassThru
+                            $Process = $null
+                            $ProcessStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+                            $ProcessStartInfo.FileName = $Player.Source
+                            [void] $ProcessStartInfo.ArgumentList.Add($WavePath)
+                            $ProcessStartInfo.CreateNoWindow = $true
+                            $ProcessStartInfo.RedirectStandardError = $true
+                            $ProcessStartInfo.RedirectStandardOutput = $true
+                            $ProcessStartInfo.UseShellExecute = $false
 
-                            if ($Process.ExitCode -eq 0) {
+                            $Process = [System.Diagnostics.Process]::new()
+                            $Process.StartInfo = $ProcessStartInfo
+                            [void] $Process.Start()
+                            $StandardOutputTask = $Process.StandardOutput.ReadToEndAsync()
+                            $StandardErrorTask = $Process.StandardError.ReadToEndAsync()
+                            $ProcessExited = $Process.WaitForExit(5000)
+
+                            if (-not $ProcessExited) {
+                                $Process.Kill()
+                                $Process.WaitForExit()
+                            }
+
+                            [void] $StandardOutputTask.GetAwaiter().GetResult()
+                            [void] $StandardErrorTask.GetAwaiter().GetResult()
+
+                            if ($ProcessExited -and $Process.ExitCode -eq 0) {
                                 return $true
                             }
                         }
                         finally {
+                            if ($null -ne $Process) {
+                                $Process.Dispose()
+                            }
+
                             if (Test-Path -LiteralPath $WavePath) {
                                 Remove-Item -LiteralPath $WavePath -Force
                             }
@@ -291,10 +317,10 @@ function Invoke-SpookySkeleton {
         $NextMessageAt = [DateTimeOffset]::Now.AddMilliseconds($MessageDisplayMilliseconds)
 
         $SkeletonArt = @'
-░░░░░░░░░░░░░░░░░░░░
-░░░░░░░▄▄▄░░░░░░░░░░
-░░░░░░▐▀█▀▌░░░░░░░░░
-░░░░░░▐█▄█▌░░░░░░░░░
+░░░░░░░░░░░░░▄▐░░░░
+░░░░░░░▄▄▄░░▄██▄░░░
+░░░░░░▐▀█▀▌░░░░▀█▄░
+░░░░░░▐█▄█▌░░░░░░▀█▄
 ░░░░░░░▀▄▀░░░▄▄▄▄▄▀▀
 ░░░░░▄▄▄██▀▀▀▀░░░░░
 ░░░░█▀▄▄▄█░▀▀░░░░░░
@@ -431,12 +457,14 @@ function Invoke-SpookySkeleton {
             }
 
             $FrameWidth = ($ArtLines | Measure-Object -Property Length -Maximum).Maximum
+            $FrameBuilder = [System.Text.StringBuilder]::new()
             foreach ($Line in $ArtLines) {
-                $Host.UI.WriteLine("$Padding$($Line.PadRight($FrameWidth, '░'))")
+                [void] $FrameBuilder.AppendLine("$Padding$($Line.PadRight($FrameWidth, '░'))")
             }
 
-            $Host.UI.WriteLine('')
-            $Host.UI.WriteLine("$Padding$Message")
+            [void] $FrameBuilder.AppendLine()
+            [void] $FrameBuilder.AppendLine("$Padding$Message")
+            $Host.UI.Write($FrameBuilder.ToString())
         }
     }
 
