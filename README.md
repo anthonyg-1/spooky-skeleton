@@ -1,7 +1,7 @@
-# Spooky Skeleton
+# Spooky Skeleton PS
 
-Spooky Skeleton is a tiny PowerShell-only terminal animation helper inspired by
-the incredibly serious spooky skeleton copypasta.
+Spooky Skeleton PS is a tiny PowerShell-only terminal animation helper inspired
+by the incredibly serious spooky skeleton copypasta.
 
 The main script is `Invoke-SpookySkeleton.ps1`, and the main function is
 `Invoke-SpookySkeleton`. It can run as a short demo spinner, or it can animate
